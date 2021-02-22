@@ -1,55 +1,46 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.util;
 
 import android.os.Parcelable;
+
 import com.tencent.mobileqq.app.QQAppInterface;
-import de.robv.android.xposed.XposedBridge;
 
-import java.lang.reflect.Field;
-
-import static nil.nadph.qnotified.util.Utils.log;
 import static nil.nadph.qnotified.util.Utils.loge;
+import static nil.nadph.qnotified.util.Utils.PACKAGE_NAME_QQ;
 
 @SuppressWarnings("rawtypes")
 public class Initiator {
+
+    private Initiator() {
+        throw new AssertionError("No instance for you!");
+    }
 
     private static ClassLoader sHostClassLoader;
     private static ClassLoader sPluginParentClassLoader;
 
     public static void init(ClassLoader classLoader) {
-        if (classLoader == null) throw new NullPointerException("classLoader == null");
-        try {
-            sHostClassLoader = classLoader;
-            Field fParent = ClassLoader.class.getDeclaredField("parent");
-            fParent.setAccessible(true);
-            ClassLoader mine = Initiator.class.getClassLoader();
-            ClassLoader curr = (ClassLoader) fParent.get(mine);
-            if (curr == null) {
-                curr = XposedBridge.class.getClassLoader();
-            }
-            if (!curr.getClass().getName().equals(HybridClassLoader.class.getName())) {
-                fParent.set(mine, sPluginParentClassLoader = new HybridClassLoader(curr, classLoader));
-            }
-        } catch (Exception e) {
-            log(e);
-        }
+        sHostClassLoader = classLoader;
+        sPluginParentClassLoader = Initiator.class.getClassLoader();
     }
 
     public static ClassLoader getPluginClassLoader() {
@@ -61,7 +52,6 @@ public class Initiator {
         return sHostClassLoader;
     }
 
-    @Nullable
     public static Class<?> load(String className) {
         if (sPluginParentClassLoader == null || className == null || className.isEmpty()) {
             return null;
@@ -73,7 +63,7 @@ public class Initiator {
             else className = className.substring(0, className.length() - 1);
         }
         if (className.startsWith(".")) {
-            className = Utils.PACKAGE_NAME_QQ + className;
+            className = PACKAGE_NAME_QQ + className;
         }
         try {
             return sPluginParentClassLoader.loadClass(className);
@@ -88,7 +78,8 @@ public class Initiator {
         if (mQbossADImmersionBannerManager == null) {
             try {
                 tmp = load("cooperation.vip.qqbanner.QbossADImmersionBannerManager$1");
-                if (tmp == null) tmp = load("cooperation.vip.qqbanner.QbossADImmersionBannerManager$2");
+                if (tmp == null)
+                    tmp = load("cooperation.vip.qqbanner.QbossADImmersionBannerManager$2");
                 mQbossADImmersionBannerManager = tmp.getDeclaredField("this$0").getType();
             } catch (Exception ignored) {
             }
@@ -454,6 +445,12 @@ public class Initiator {
         return clazz;
     }
 
+    public static Class _TroopMemberInfo() {
+        Class<?> clazz = load("com.tencent.mobileqq.data.troop.TroopMemberInfo");
+        if (clazz == null) clazz = load("com.tencent.mobileqq.data.TroopMemberInfo");
+        return clazz;
+    }
+
     public static Class _Conversation() {
         Class<?> clazz = load("com/tencent/mobileqq/activity/home/Conversation");
         if (clazz == null) clazz = load("com/tencent/mobileqq/activity/Conversation");
@@ -495,7 +492,6 @@ public class Initiator {
         return clz;
     }
 
-    @Nullable
     public static Class _EmoAddedAuthCallback() {
         try {
             Class clz = load("com/tencent/mobileqq/emosm/favroaming/EmoAddedAuthCallback");
@@ -519,11 +515,10 @@ public class Initiator {
         }
     }
 
-    @Nullable
     public static Class _C2CMessageProcessor() {
         Class<?> ret, cref;
         for (String clzName : new String[]{"com/tencent/mobileqq/app/message/C2CMessageProcessor",
-                "com/tencent/imcore/message/C2CMessageProcessor"}) {
+            "com/tencent/imcore/message/C2CMessageProcessor"}) {
             ret = load(clzName);
             if (ret != null) return ret;
             for (int i : new int[]{4, 6, 1, 5, 7}) {

@@ -1,63 +1,55 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.ui;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.NinePatch;
-import android.graphics.Rect;
+import android.graphics.*;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
 import android.widget.Button;
 
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
 import de.robv.android.xposed.XposedHelpers;
+import me.singleneuron.qn_kernel.data.HostInformationProviderKt;
 import nil.nadph.qnotified.util.ArscKit;
-import nil.nadph.qnotified.util.Nullable;
+
+import androidx.annotation.NonNull;
 
 import static nil.nadph.qnotified.util.Initiator.load;
-import static nil.nadph.qnotified.util.Utils.dip2px;
-import static nil.nadph.qnotified.util.Utils.getAppRuntime;
-import static nil.nadph.qnotified.util.Utils.getApplication;
-import static nil.nadph.qnotified.util.Utils.iget_object_or_null;
-import static nil.nadph.qnotified.util.Utils.invoke_static;
-import static nil.nadph.qnotified.util.Utils.isTim;
-import static nil.nadph.qnotified.util.Utils.log;
-import static nil.nadph.qnotified.util.Utils.logd;
+import static nil.nadph.qnotified.util.ReflexUtil.iget_object_or_null;
+import static nil.nadph.qnotified.util.ReflexUtil.invoke_static;
+import static nil.nadph.qnotified.util.Utils.*;
 
 public class ResUtils {
 
@@ -73,10 +65,16 @@ public class ResUtils {
     static public ColorStateList skin_color_button_blue;
     static public Drawable skin_common_btn_blue_pressed, skin_common_btn_blue_unpressed;
 
+    static private boolean inited = false;
     static private String cachedThemeId;
     static private final Map<String, Drawable> cachedDrawable = new HashMap<>();
 
-    public static void initTheme(Context ctx) throws Throwable {
+    public static void requireResourcesNonNull(Context ctx) {
+        if (ctx == null) ctx = HostInformationProviderKt.getHostInfo().getApplication();
+        if (!inited) initTheme(ctx);
+    }
+
+    public static void initTheme(Context ctx) {
         try {
             String themeId = (String) invoke_static(load("com/tencent/mobileqq/theme/ThemeUtil"), "getUserCurrentThemeId", null, load("mqq/app/AppRuntime"));
             if (themeId.equals(cachedThemeId)) return;
@@ -93,6 +91,7 @@ public class ResUtils {
         list_checkbox_selected_nopress = list_checkbox_selected = list_checkbox_multi = list_checkbox = null;
         loadThemeByArsc(ctx, true);
         initByFallback(ctx);
+        inited = true;
     }
 
     private static void initByFallback(Context ctx) {
@@ -220,7 +219,6 @@ public class ResUtils {
     }
 
     public static void applyStyleCommonBtnBlue(Button btn) {
-        //btn.setBackgroundDrawable(getCommonBtnBlueBackground());
         ViewCompat.setBackground(btn,getCommonBtnBlueBackground());
         btn.setTextColor(skin_color_button_blue);
         btn.setTextSize(17);
@@ -230,7 +228,6 @@ public class ResUtils {
     public static StateListDrawable getListItemBackground() {
         StateListDrawable sd = new StateListDrawable();
         sd.addState(new int[]{android.R.attr.state_pressed}, skin_list_item_pressed);
-        //sd.addState(new int[]{android.R.attr.state_focused}, skin_list_item_unread);
         sd.addState(new int[]{android.R.attr.state_selected}, skin_list_item_pressed);
         sd.addState(new int[]{}, skin_list_item_normal);
         return sd;
@@ -260,9 +257,7 @@ public class ResUtils {
         try {
             Bitmap bitmap = BitmapFactory.decodeStream(in);
             bitmap.setDensity(320);// qq has xhdpi
-            //log(name+"BiHeight:"+bitmap.getHeight());
             byte[] chunk = bitmap.getNinePatchChunk();
-            //log("Res == "+res);
             if (NinePatch.isNinePatchChunk(chunk)) {
                 Class clz = load("com/tencent/theme/SkinnableNinePatchDrawable");
                 ret = (Drawable) XposedHelpers.findConstructorBestMatch(clz, Resources.class, Bitmap.class, byte[].class, Rect.class, String.class)
@@ -270,7 +265,6 @@ public class ResUtils {
             } else {
                 ret = new BitmapDrawable(res, bitmap);
             }
-            //log(name+"DrHiMin="+ret.getMinimumHeight());
             return ret.mutate();
         } catch (Exception e) {
             log(e);
@@ -283,7 +277,6 @@ public class ResUtils {
         if ((ret = cachedDrawable.get(name)) != null) return ret;
         try {
             if (res == null && mContext != null) res = mContext.getResources();
-            //log(res + "is not null");
             InputStream fin = openAsset(name);
             ret = loadDrawableFromStream(fin, name, res);
             cachedDrawable.put(name, ret);
@@ -325,7 +318,7 @@ public class ResUtils {
             String themeId = (String) invoke_static(load("com/tencent/mobileqq/theme/ThemeUtil"), "getUserCurrentThemeId", getAppRuntime(), load("mqq/app/AppRuntime"));
             return "1103".endsWith(themeId) || "2920".endsWith(themeId);
         } catch (Exception e) {
-            if (isTim(getApplication())) {
+            if (HostInformationProviderKt.getHostInfo().isTim()) {
                 return false;
             }
             log(e);

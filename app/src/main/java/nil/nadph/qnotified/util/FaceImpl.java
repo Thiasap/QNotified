@@ -1,20 +1,23 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.util;
 
@@ -22,7 +25,8 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.view.View;
 import android.widget.ImageView;
-import nil.nadph.qnotified.ui.ResUtils;
+
+import androidx.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -31,9 +35,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 
-import static nil.nadph.qnotified.util.Initiator.load;
+import nil.nadph.qnotified.ui.ResUtils;
 
-@SuppressWarnings("rawtypes")
+import static nil.nadph.qnotified.util.Initiator.load;
+import static nil.nadph.qnotified.util.ReflexUtil.invoke_virtual_any;
+
 public class FaceImpl implements InvocationHandler {
 
     public static final int TYPE_USER = 1;
@@ -47,7 +53,6 @@ public class FaceImpl implements InvocationHandler {
     private final Object mFaceDecoder;
 
     private FaceImpl() throws Throwable {
-        //private Object faceMgr;
         Object qqAppInterface = Utils.getAppRuntime();
         class_FaceDecoder = load("com/tencent/mobileqq/util/FaceDecoder");
         if (class_FaceDecoder == null) {
@@ -63,7 +68,7 @@ public class FaceImpl implements InvocationHandler {
             }
         }
         mFaceDecoder = class_FaceDecoder.getConstructor(load("com/tencent/common/app/AppInterface")).newInstance(qqAppInterface);
-        Utils.invoke_virtual_any(mFaceDecoder, createListener(), clz_DecodeTaskCompletionListener);
+        invoke_virtual_any(mFaceDecoder, createListener(), clz_DecodeTaskCompletionListener);
         cachedUserFace = new HashMap<>();
         cachedTroopFace = new HashMap<>();
         registeredView = new HashMap<>();
@@ -80,9 +85,15 @@ public class FaceImpl implements InvocationHandler {
     }
 
     private Object createListener() {
-        clz_DecodeTaskCompletionListener = load("com/tencent/mobileqq/util/FaceDecoder$DecodeTaskCompletionListener");
+        clz_DecodeTaskCompletionListener = load("com/tencent/mobileqq/avatar/listener" +
+                "/DecodeTaskCompletionListener");
         if (clz_DecodeTaskCompletionListener == null) {
-            clz_DecodeTaskCompletionListener = load("com/tencent/mobileqq/app/face/FaceDecoder$DecodeTaskCompletionListener");
+            clz_DecodeTaskCompletionListener = load("com/tencent/mobileqq/util" +
+                    "/FaceDecoder$DecodeTaskCompletionListener");
+        }
+        if (clz_DecodeTaskCompletionListener == null) {
+            clz_DecodeTaskCompletionListener = load("com/tencent/mobileqq/app/face" +
+                    "/FaceDecoder$DecodeTaskCompletionListener");
         }
         if (clz_DecodeTaskCompletionListener == null) {
             Class[] argt;
@@ -107,15 +118,14 @@ public class FaceImpl implements InvocationHandler {
         }
         return null;
     }
-
-    public void onDecodeTaskCompleted(int code, int type, String uin, final Bitmap bitmap) {
-        //Utils.log(code+","+type+","+uin+","+bitmap);
+    
+    public void onDecodeTaskCompleted(int code, int type, String uin, Bitmap bitmap) {
         if (bitmap != null) {
             if (type == TYPE_USER) cachedUserFace.put(uin, bitmap);
             if (type == TYPE_TROOP) cachedTroopFace.put(uin, bitmap);
             WeakReference<ImageView> ref;
             if ((ref = registeredView.remove(type + " " + uin)) != null) {
-                final ImageView v = ref.get();
+                ImageView v = ref.get();
                 if (v != null) ((Activity) Utils.getContext(v)).runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -126,8 +136,8 @@ public class FaceImpl implements InvocationHandler {
         }
     }
 
-    public @Nullable
-    Bitmap getBitmapFromCache(int type, String uin) {
+    @Nullable
+    public Bitmap getBitmapFromCache(int type, String uin) {
         if (type == TYPE_TROOP) return cachedTroopFace.get(uin);
         if (type == TYPE_USER) return cachedUserFace.get(uin);
         return null;
@@ -135,7 +145,7 @@ public class FaceImpl implements InvocationHandler {
 
     public boolean requestDecodeFace(int type, String uin) {
         try {
-            return (boolean) Utils.invoke_virtual_any(mFaceDecoder, uin, type, true, (byte) 0, String.class, int.class, boolean.class, byte.class, boolean.class);
+            return (boolean) invoke_virtual_any(mFaceDecoder, uin, type, true, (byte) 0, String.class, int.class, boolean.class, byte.class, boolean.class);
         } catch (Exception e) {
             Utils.log(e);
             return false;

@@ -1,31 +1,28 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.util;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * A simple class to use json and vector like php array
@@ -74,7 +71,6 @@ public class PHPArray implements Iterable<HashMap.Entry> {
         }
     }
 
-    //@Deprecated
     public static PHPArray fromJson(String json) {
         int off = 0;
         Stack<Integer> types = new Stack<>();
@@ -503,30 +499,4 @@ public class PHPArray implements Iterable<HashMap.Entry> {
         }
     }
 
-    /*public static class KVIterator implements Iterator{
-        KVPair[] pairs;
-        KVIterator(HashMap map){
-            pairs=new KVPair[map.size()];
-            for ()
-        }
-
-        @Override
-        public b
-    public static class KVPair{
-        public Object k;
-        public Object v;
-    }oolean hasNext() {
-            return false;
-        }
-
-        @Override
-        public Object next() {
-            return null;
-        }
-    }
-
-    public static class KVPair{
-        public Object k;
-        public Object v;
-    }*/
 }

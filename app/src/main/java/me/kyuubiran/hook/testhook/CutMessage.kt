@@ -1,12 +1,35 @@
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
+ *
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation; either
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
+ */
 package me.kyuubiran.hook.testhook
 
 import android.os.Looper
 import android.widget.Toast
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
-import me.kyuubiran.utils.getObjectOrNull
-import me.kyuubiran.utils.logd
+import me.kyuubiran.util.LOG_TYPE_FIND_METHOD
+import me.kyuubiran.util.getObjectOrNull
+import me.kyuubiran.util.logd
 import me.singleneuron.data.MsgRecordData
+import me.singleneuron.qn_kernel.data.hostInfo
 import nil.nadph.qnotified.SyncUtils
 import nil.nadph.qnotified.config.ConfigManager
 import nil.nadph.qnotified.hook.BaseDelayableHook
@@ -37,21 +60,13 @@ object CutMessage : BaseDelayableHook() {
                         override fun beforeHookedMethod(param: MethodHookParam?) {
                             if (LicenseStatus.sDisableCommonHooks) return
                             if (!isEnabled) return
-                            val msgRecord = param?.args?.get(0)?: return
-                            if (msgRecord::class.java.name!="com.tencent.imcore.message.QQMessageFacade${'$'}Message") return
+                            val msgRecord = param?.args?.get(0) ?: return
+                            if (msgRecord::class.java.name != "com.tencent.imcore.message.QQMessageFacade${'$'}Message") return
                             val msgRecordData = MsgRecordData(msgRecord)
                             try {
+                                logd(LOG_TYPE_FIND_METHOD, "->$m")
                                 logd("收到一份消息: \n$msgRecordData")
-                                //logd(msgRecord::class.java.name)
-                                /*val msg = getMsg(msgRecord)
-                                val senderUin = getSenderUin(msgRecord)
-                                val msgType = getMsgType(msgRecord)
-                                val friendUin = getFriendUin(msgRecord)
-                                val selfUin = getSelfUin(msgRecord)
-                                val time = getTime(msgRecord)
-                                logd("收到一份来自${senderUin}的消息:\n${msg}\n消息类型是${msgType}\n好友QQ是${friendUin}\n自己QQ是${selfUin}\n时间戳${time}")*/
                             } catch (t: Throwable) {
-                                //log(t)
                             }
                         }
                     })
@@ -86,9 +101,9 @@ object CutMessage : BaseDelayableHook() {
         } catch (e: Exception) {
             Utils.log(e)
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                Utils.showToast(Utils.getApplication(), Utils.TOAST_TYPE_ERROR, e.toString() + "", Toast.LENGTH_SHORT)
+                Utils.showToast(hostInfo.application, Utils.TOAST_TYPE_ERROR, e.toString() + "", Toast.LENGTH_SHORT)
             } else {
-                SyncUtils.post { Utils.showToast(Utils.getApplication(), Utils.TOAST_TYPE_ERROR, e.toString() + "", Toast.LENGTH_SHORT) }
+                SyncUtils.post { Utils.showToast(hostInfo.application, Utils.TOAST_TYPE_ERROR, e.toString() + "", Toast.LENGTH_SHORT) }
             }
         }
     }

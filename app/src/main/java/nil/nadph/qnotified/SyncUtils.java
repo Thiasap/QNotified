@@ -1,20 +1,23 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified;
 
@@ -27,19 +30,14 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import androidx.annotation.NonNull;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import nil.nadph.qnotified.hook.BaseDelayableHook;
+import me.singleneuron.qn_kernel.data.HostInformationProviderKt;
+import nil.nadph.qnotified.hook.AbsDelayableHook;
 
-import static nil.nadph.qnotified.util.Utils.getApplication;
 import static nil.nadph.qnotified.util.Utils.log;
 import static nil.nadph.qnotified.util.Utils.loge;
 
@@ -106,7 +104,6 @@ public class SyncUtils {
                     long uin = intent.getLongExtra("uin", 0);
                     int what = intent.getIntExtra("file", 0);
                     if (id != -1 && id != myId) {
-                        //log("Rx: FILE_DEFAULT_CONFIG changed, setDirtyFlag");
                         onRecvFileChanged(file, uin, what);
                     }
                     break;
@@ -115,8 +112,7 @@ public class SyncUtils {
                     int targetType = intent.getIntExtra("process", 0);
                     int hookId = intent.getIntExtra("hook", -1);
                     if (hookId != -1 && (myType & targetType) != 0) {
-                        BaseDelayableHook hook = BaseDelayableHook.getHookByType(hookId);
-                        //log("Remote: recv init " + hook);
+                        AbsDelayableHook hook = AbsDelayableHook.getHookByType(hookId);
                         if (hook != null) {
                             try {
                                 hook.init();
@@ -175,16 +171,15 @@ public class SyncUtils {
         filter.addAction(GENERIC_WRAPPER);
         ctx.registerReceiver(recv, filter);
         inited = true;
-        //log("Proc:  " + android.os.Process.myPid() + "/" + getProcessType() + "/" + getProcessName());
     }
 
-    //@Deprecated
+    @Deprecated
     public static void sendGenericBroadcast(Intent intent) {
         sendGenericBroadcast(null, intent);
     }
 
     public static void sendGenericBroadcast(Context ctx, Intent intent) {
-        if (ctx == null) ctx = getApplication();
+        if (ctx == null) ctx = HostInformationProviderKt.getHostInfo().getApplication();
         intent.putExtra(_REAL_INTENT, intent.getAction());
         intent.setAction(GENERIC_WRAPPER);
         intent.setPackage(ctx.getPackageName());
@@ -201,7 +196,7 @@ public class SyncUtils {
      * @param what 0 for unspecified
      */
     public static void onFileChanged(int file, long uin, int what) {
-        Context ctx = getApplication();
+        Context ctx = HostInformationProviderKt.getHostInfo().getApplication();
         Intent changed = new Intent(SYNC_FILE_CHANGED);
         changed.setPackage(ctx.getPackageName());
         initId();
@@ -210,17 +205,15 @@ public class SyncUtils {
         changed.putExtra("uin", uin);
         changed.putExtra("what", what);
         ctx.sendBroadcast(changed);
-        //log("Tx: file changed " + file);
     }
 
     public static void requestInitHook(int hookId, int process) {
-        Context ctx = getApplication();
+        Context ctx = HostInformationProviderKt.getHostInfo().getApplication();
         Intent changed = new Intent(HOOK_DO_INIT);
         changed.setPackage(ctx.getPackageName());
         initId();
         changed.putExtra("process", process);
         changed.putExtra("hook", hookId);
-        //log("Tx: " + hookId);
         ctx.sendBroadcast(changed);
     }
 
@@ -269,13 +262,17 @@ public class SyncUtils {
         return getProcessType() == PROC_MAIN;
     }
 
+    public static boolean isTargetProcess(int target) {
+        return (getProcessType() & target) != 0;
+    }
+
     public static String getProcessName() {
         if (mProcName != null) return mProcName;
         String name = "unknown";
         int retry = 0;
         do {
             try {
-                List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = ((ActivityManager) getApplication().getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
+                List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = ((ActivityManager) HostInformationProviderKt.getHostInfo().getApplication().getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
                 if (runningAppProcesses != null) {
                     for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcesses) {
                         if (runningAppProcessInfo != null && runningAppProcessInfo.pid == android.os.Process.myPid()) {
@@ -284,12 +281,6 @@ public class SyncUtils {
                         }
                     }
                 }
-				/*FileInputStream fin = new FileInputStream("/proc/" + android.os.Process.myPid() + "/cmdline");
-				 byte[] b = new byte[64];
-				 int len = fin.read(b, 0, b.length);
-				 fin.close();
-				 String procName = new String(b, 0, len).trim();
-				 //XposedBridge.log(procName);*/
             } catch (Throwable e) {
                 loge("getProcessName error " + e);
             }
@@ -334,11 +325,21 @@ public class SyncUtils {
         return holder;
     }
 
-    public static void post(Runnable r) {
+    @SuppressLint("LambdaLast")
+    public static void postDelayed(@NonNull Runnable r, long ms) {
         if (sHandler == null) {
             sHandler = new Handler(Looper.getMainLooper());
         }
-        sHandler.post(r);
+        sHandler.postDelayed(r, ms);
+    }
+
+    //kotlin friendly?
+    public static void postDelayed(long ms, @NonNull Runnable r) {
+        postDelayed(r, ms);
+    }
+
+    public static void post(@NonNull Runnable r) {
+        postDelayed(r, 0L);
     }
 
     public static class EnumRequestHolder {
@@ -395,40 +396,6 @@ public class SyncUtils {
     public static int randomInt32Bits() {
         return new Random().nextInt();
     }
-    /*
-     public static synchronized String getSocketUuid() {
-     Context ctx = getApplication();
-     File f = new File(ctx.getFilesDir(), "nil_nadph_uuid");
-     try {
-     if (f.exists()) {
-     FileInputStream fin = new FileInputStream(f);
-     byte[] buf = new byte[20];
-     int l = fin.read(buf);
-     fin.close();
-     String str = new String(buf, 0, l)
-     .replace("\r", "").replace("\n", "").replace(" ", "").replace("\t", "");
-     if (str.length() > 4) return str;
-     }
-     String uuid = UUID.randomUUID().toString().replace("\r", "").replace("\n", "").replace(" ", "").replace("\t", "");
-     if (!f.exists()) f.createNewFile();
-     FileOutputStream fout = new FileOutputStream(f);
-     fout.write(uuid.getBytes());
-     fout.flush();
-     fout.close();
-     return uuid;
-     } catch (IOException e) {
-     throw new RuntimeException("Unable to allocate uuid");
-     }
-     }
-     */
-
-//    public static int getUid() {
-//        try {
-//            return Libcore.os.getuid();
-//        } catch (Throwable e) {
-//            return android.os.Process.myUid();
-//        }
-//    }
 
     public static void initId() {
         if (myId == 0) {

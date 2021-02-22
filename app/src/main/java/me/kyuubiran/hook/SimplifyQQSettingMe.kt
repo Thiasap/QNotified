@@ -1,3 +1,24 @@
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
+ *
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation; either
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
+ */
 package me.kyuubiran.hook
 
 import android.view.View
@@ -5,14 +26,13 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
-import me.kyuubiran.utils.setZeroHeightWeight
+import me.kyuubiran.util.setViewZeroSize
 import nil.nadph.qnotified.SyncUtils
-import nil.nadph.qnotified.step.Step
 import nil.nadph.qnotified.util.Initiator
+import nil.nadph.qnotified.util.ReflexUtil.iget_object_or_null
+import nil.nadph.qnotified.step.Step
 import nil.nadph.qnotified.util.LicenseStatus
 import nil.nadph.qnotified.util.Utils
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 import java.util.*
 
 //侧滑栏精简
@@ -21,7 +41,6 @@ object SimplifyQQSettingMe : BaseMultiConfigDelayableHook() {
 
     //Form 8.4.1
     //Body = [0,1,0,0,0,1,4] || [0,1,0,0,0,1,4,0]
-    private const val HIDE_DIAN_ZAN = "hide_dian_zan"                 //点赞提示 [0,1,0,0,0,1,4,0,0] || [0,1,0,0,0,1,4,0,0,0,1]
     private const val HIDE_KAI_BO_LA_E = "hide_kai_bo_la_e"           //开播啦鹅 [0,1,0,0,0,1,4,0,1] || [0,1,0,0,0,1,4,0,1,1,1]
     private const val HIDE_XIAO_SHI_JIE = "hide_xiao_shi_jie"         //我小世界 [0,1,0,0,0,1,4,0,2] || [0,1,0,0,0,1,4,0,1,2,1]
     private const val HIDE_HUI_YUAN = "hide_hui_yuan"                 //开通会员 [0,1,0,0,0,1,4,0,3] || [0,1,0,0,0,1,4,0,1,3,1]
@@ -57,9 +76,9 @@ object SimplifyQQSettingMe : BaseMultiConfigDelayableHook() {
                     if (LicenseStatus.sDisableCommonHooks) return
                     if (!isEnabled) return
                     //中间部分(QQ会员 我的钱包等)
-                    val midcontentListLayout: LinearLayout = Utils.iget_object_or_null(param?.thisObject, "k", View::class.java) as LinearLayout
+                    val midcontentListLayout: LinearLayout = iget_object_or_null(param?.thisObject, "k", View::class.java) as LinearLayout
                     //底端部分 设置 夜间模式 达人 等
-                    val underSettingsLayout: LinearLayout = Utils.iget_object_or_null(param?.thisObject, "h", View::class.java) as LinearLayout
+                    val underSettingsLayout: LinearLayout = iget_object_or_null(param?.thisObject, "h", View::class.java) as LinearLayout
 
                     for (i in 1 until underSettingsLayout.childCount) {
                         val child = underSettingsLayout.getChildAt(i) as LinearLayout
@@ -67,13 +86,13 @@ object SimplifyQQSettingMe : BaseMultiConfigDelayableHook() {
                         val text = tv.text
                         when {
                             text.contains("间") && getBooleanConfig(HIDE_YE_JIAN) -> {
-                                setZeroHeightWeight(child)
+                                child.setViewZeroSize()
                             }
                             (text.contains("达") || text.contains("天")) && getBooleanConfig(HIDE_DA_REN) -> {
-                                setZeroHeightWeight(child)
+                                child.setViewZeroSize()
                             }
                             i == 3 && getBooleanConfig(HIDE_WEN_DU) -> {
-                                setZeroHeightWeight(child)
+                                child.setViewZeroSize()
                             }
                         }
                     }
@@ -84,68 +103,56 @@ object SimplifyQQSettingMe : BaseMultiConfigDelayableHook() {
                             val tv = child.getChildAt(1) as TextView
                             val text = tv.text.toString()
                             when {
-                                text.contains("开播") && getBooleanConfig(HIDE_KAI_BO_LA_E) -> {
-                                    setZeroHeightWeight(child)
+                                text.contains("播") && getBooleanConfig(HIDE_KAI_BO_LA_E) -> {
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("世界") && getBooleanConfig(HIDE_XIAO_SHI_JIE) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 (text.contains("会员") || text.toLowerCase(Locale.ROOT).contains("vip")) && getBooleanConfig(HIDE_HUI_YUAN) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("钱包") && getBooleanConfig(HIDE_QIAN_BAO) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("装扮") && getBooleanConfig(HIDE_ZHUANG_BAN) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("情侣") && getBooleanConfig(HIDE_QING_LV) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("相册") && getBooleanConfig(HIDE_XIANG_CE) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("收藏") && getBooleanConfig(HIDE_SHOU_CANG) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("文件") && getBooleanConfig(HIDE_WEN_JIAN) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("日程") && getBooleanConfig(HIDE_RI_CHENG) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("视频") && getBooleanConfig(HIDE_SHI_PIN) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("游戏") && getBooleanConfig(HIDE_XIAO_YOU_XI) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("文档") && getBooleanConfig(HIDE_WEN_DANG) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 text.contains("打卡") && getBooleanConfig(HIDE_DA_KA) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                                 (text.contains("王卡") || text.contains("流量") || text.contains("送12个月")) && getBooleanConfig(HIDE_WANG_KA) -> {
-                                    setZeroHeightWeight(child)
+                                    child.setViewZeroSize()
                                 }
                             }
                         }
                     }
                 }
             })
-            if (getBooleanConfig(HIDE_DIAN_ZAN)) {
-                for (m: Method in clz.declaredMethods) {
-                    val argt = m.parameterTypes
-                    if (m.name == "V" && !Modifier.isStatic(m.modifiers) && argt.isEmpty()) {
-                        XposedBridge.hookMethod(m, object : XC_MethodHook() {
-                            override fun beforeHookedMethod(param: MethodHookParam?) {
-                                param?.result = null
-                            }
-                        })
-                    }
-                }
-            }
             isInit = true
             true
         } catch (t: Throwable) {
@@ -159,7 +166,7 @@ object SimplifyQQSettingMe : BaseMultiConfigDelayableHook() {
     }
 
     override fun isEnabled(): Boolean {
-        return getBooleanConfig(HIDE_DIAN_ZAN) || getBooleanConfig(HIDE_KAI_BO_LA_E) || getBooleanConfig(HIDE_HUI_YUAN) || getBooleanConfig(HIDE_XIAO_SHI_JIE)
+        return getBooleanConfig(HIDE_KAI_BO_LA_E) || getBooleanConfig(HIDE_HUI_YUAN) || getBooleanConfig(HIDE_XIAO_SHI_JIE)
                 || getBooleanConfig(HIDE_QIAN_BAO) || getBooleanConfig(HIDE_ZHUANG_BAN) || getBooleanConfig(HIDE_QING_LV) || getBooleanConfig(HIDE_SHOU_CANG)
                 || getBooleanConfig(HIDE_XIANG_CE) || getBooleanConfig(HIDE_WEN_JIAN) || getBooleanConfig(HIDE_RI_CHENG) || getBooleanConfig(HIDE_SHI_PIN)
                 || getBooleanConfig(HIDE_XIAO_YOU_XI) || getBooleanConfig(HIDE_WEN_DANG) || getBooleanConfig(HIDE_DA_KA) || getBooleanConfig(HIDE_WANG_KA)

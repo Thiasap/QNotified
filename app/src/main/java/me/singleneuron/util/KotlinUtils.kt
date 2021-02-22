@@ -1,3 +1,24 @@
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
+ *
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
+ * as published by the Free Software Foundation; either
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
+ */
 package me.singleneuron.util
 
 import android.app.Activity
@@ -64,15 +85,15 @@ fun dumpIntent(intent: Intent) {
     Utils.logd(Log.getStackTraceString(Throwable()))
 }
 
-fun checkCardMsg(string: String): CardMsgCheckResult {
-    if (BuildConfig.DEBUG||LicenseStatus.isInsider()) return CardMsgCheckResult(true)
+fun checkCardMsg(originString: String): CardMsgCheckResult {
     try {
-        Utils.logd("trying: $string")
+        Utils.logd("origin string: $originString")
+        val string = decodePercent(originString)
+        Utils.logd("decode string: $string")
         val blackListString = CardMsgList.getInstance().invoke()
         val blackList = Gson().fromJson<HashMap<String, String>>(blackListString, object : TypeToken<HashMap<String, String>>() {}.type)
         Utils.logd(Gson().toJson(blackList))
         for (rule in blackList) {
-            Utils.logd("checking: $rule")
             if (Regex(rule.value, setOf(RegexOption.IGNORE_CASE,RegexOption.DOT_MATCHES_ALL)).containsMatchIn(string)) {
                 return CardMsgCheckResult(false, rule.key)
             }
@@ -81,6 +102,26 @@ fun checkCardMsg(string: String): CardMsgCheckResult {
     } catch (e: Exception) {
         Utils.log(e)
         return CardMsgCheckResult(false, "Failed: $e")
+    }
+}
+
+private fun decodePercent(string:String): String {
+    var produceString = string
+    val regex = Regex("""%[0-9a-fA-F]{2}""",RegexOption.IGNORE_CASE)
+    while (true) {
+        if (!regex.containsMatchIn(produceString)) return produceString
+        produceString = regex.replace(produceString){matchResult ->
+            val hex = matchResult.value.substring(1)
+            try {
+                val char = Integer.valueOf(hex,16).toChar().toString()
+                Utils.logd("replace $hex -> $char")
+                return@replace char
+            } catch (e:Exception) {
+                Utils.log(e)
+                return@replace hex
+            }
+        }
+        Utils.logd("processing string: $produceString")
     }
 }
 
@@ -123,10 +164,8 @@ fun showEulaDialog(activity: Activity) {
     })
     button.isEnabled = false
     Thread {
-        var time = 30
-        if (LicenseStatus.getCurrentUserWhiteFlags()!=0) time = (Math.random()*10).toInt()
+        var time = 15
         if (LicenseStatus.isInsider()) time = if (Math.random()<0.1) 86400 else 5
-        if (LicenseStatus.getCurrentUserBlackFlags()!=0) time = (Math.random()*82800+3600).toInt()
         if (Math.random()<0.01) time = - time
         do {
             Utils.runOnUiThread { button.text = "我已阅读并同意用户协议 ($time)" }

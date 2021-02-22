@@ -1,32 +1,41 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.config;
 
 import android.content.Context;
+
+import androidx.annotation.NonNull;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Objects;
+
+import me.singleneuron.qn_kernel.data.HostInformationProviderKt;
 import nil.nadph.qnotified.ExfriendManager;
 import nil.nadph.qnotified.util.MainProcess;
 import nil.nadph.qnotified.util.Utils;
 
-import java.io.File;
-import java.io.IOException;
-
-import static nil.nadph.qnotified.util.Utils.*;
+import static nil.nadph.qnotified.util.Utils.QN_VERSION_CODE;
+import static nil.nadph.qnotified.util.Utils.log;
 
 public class ConfigItems {
     public static final String qn_hide_msg_list_miniapp = "qn_hide_msg_list_miniapp";
@@ -59,7 +68,7 @@ public class ConfigItems {
         @Override
         public boolean isEnabled() {
             try {
-                Context ctx = getApplication();
+                Context ctx = HostInformationProviderKt.getHostInfo().getApplication();
                 return new File(ctx.getFilesDir(), "qn_disable_hot_patch").exists();
             } catch (Throwable e) {
                 Utils.showErrorToastAnywhere(e.toString());
@@ -70,7 +79,7 @@ public class ConfigItems {
         @Override
         public void setEnabled(boolean enabled) {
             try {
-                Context ctx = getApplication();
+                Context ctx = HostInformationProviderKt.getHostInfo().getApplication();
                 File f = new File(ctx.getFilesDir(), "qn_disable_hot_patch");
                 if (enabled != f.exists()) {
                     if (enabled) {
@@ -129,6 +138,34 @@ public class ConfigItems {
         }
     };
 
+    public static final SwitchConfigItem bug_unlock_msg_length = switchConfigAtDefault("bug_unlock_msg_length", false);
+
+    @NonNull
+    private static SwitchConfigItem switchConfigAtDefault(final @NonNull String name, final boolean defVal) {
+        Objects.requireNonNull(name, "name");
+        return new SwitchConfigItem() {
+
+            @Override
+            public boolean isValid() {
+                return true;
+            }
+
+            @Override
+            public boolean sync() {
+                return ConfigManager.getDefaultConfig().sync();
+            }
+
+            @Override
+            public boolean isEnabled() {
+                return ConfigManager.getDefaultConfig().getBooleanOrDefault(name, defVal);
+            }
+
+            @Override
+            public void setEnabled(boolean enabled) {
+                ConfigManager.getDefaultConfig().putBoolean(name, enabled);
+            }
+        };
+    }
 
     @MainProcess
     public static void removePreviousCacheIfNecessary() {

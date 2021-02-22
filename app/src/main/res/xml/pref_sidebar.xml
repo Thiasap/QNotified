@@ -2,11 +2,11 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="侧滑栏">
         <SwitchPreference
-                android:key="SimplifyQQSettingMe$hide_dian_zan"
+                android:key="HideProfileBubble"
                 android:title="隐藏点赞提醒"/>
         <SwitchPreference
-                android:key="khjsdthiuwerfgho3i"
-                android:title="隐藏打卡"/>
+                android:key="RemoveDailySign!"
+                android:title="隐藏左上角打卡"/>
         <SwitchPreference
                 android:key="hideQrCode"
                 android:title="隐藏我的二维码"/>
@@ -30,12 +30,5 @@
                 android:entryValues="@array/sidebar_list_values"
                 android:key="SimplifyQQSettingMe!"
                 android:title="隐藏侧滑栏列表"/>
-    </PreferenceCategory>
-    <PreferenceCategory android:title="设置界面">
-        <MultiSelectListPreference
-                android:entries="@array/sidebar_setting_list_titles"
-                android:entryValues="@array/sidebar_setting_list_titles"
-                android:key="hideSettingItems!"
-                android:title="隐藏设置列表"/>
     </PreferenceCategory>
 </PreferenceScreen>

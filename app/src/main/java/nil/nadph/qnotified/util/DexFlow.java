@@ -1,22 +1,27 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.util;
+
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 
@@ -69,7 +74,6 @@ public class DexFlow {
                 methodIdx += readUleb128(buf, p);
                 int accessFlags = readUleb128(buf, p);
                 int codeOff = co[0] = readUleb128(buf, p);
-                //if (codeOff == 0) continue;
                 int pMethodId = methodIdsOff + 8 * methodIdx;
                 String name = readString(buf, readLe32(buf, pMethodId + 4));
                 String sig = readProto(buf, readLe16(buf, pMethodId + 2));
@@ -80,7 +84,6 @@ public class DexFlow {
                 methodIdx += readUleb128(buf, p);
                 int accessFlags = readUleb128(buf, p);
                 int codeOff = co[0] = readUleb128(buf, p);
-                //if (codeOff == 0) continue;
                 int pMethodId = methodIdsOff + 8 * methodIdx;
                 String name = readString(buf, readLe32(buf, pMethodId + 4));
                 String sig = readProto(buf, readLe16(buf, pMethodId + 2));
@@ -186,7 +189,6 @@ public class DexFlow {
     }
 
     @NonUiThread
-    //@Deprecated
     public static DexFieldDescriptor guessFieldByNewInstance(byte[] buf, DexMethodDescriptor method, Class<?> instanceClass) throws NoSuchMethodException {
         if (instanceClass == null) throw new NullPointerException("instanceClass == null");
         return guessFieldByNewInstance(buf, method, "L" + instanceClass.getName().replace('.', '/') + ";");
@@ -423,7 +425,6 @@ public class DexFlow {
 
     public static String readProto(byte[] buf, int idx) {
         int protoIdsOff = readLe32(buf, 0x4c);
-        //int shortyStrIdx = readLe32(buf, protoIdsOff + 12 * idx);
         int returnTypeIdx = readLe32(buf, protoIdsOff + 12 * idx + 4);
         int parametersOff = readLe32(buf, protoIdsOff + 12 * idx + 8);
         StringBuilder sb = new StringBuilder("(");

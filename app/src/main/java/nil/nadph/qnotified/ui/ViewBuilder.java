@@ -1,20 +1,23 @@
-/* QNotified - An Xposed module for QQ/TIM
- * Copyright (C) 2019-2020 xenonhydride@gmail.com
- * https://github.com/cinit/QNotified
+/*
+ * QNotified - An Xposed module for QQ/TIM
+ * Copyright (C) 2019-2021 dmca@ioctl.cc
+ * https://github.com/ferredoxin/QNotified
  *
- * This software is free software: you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
+ * This software is non-free but opensource software: you can redistribute it
+ * and/or modify it under the terms of the GNU Affero General Public License
  * as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
+ * version 3 of the License, or any later version and our eula as published
+ * by ferredoxin.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ * Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this software.  If not, see
- * <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * and eula along with this software.  If not, see
+ * <https://www.gnu.org/licenses/>
+ * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
 package nil.nadph.qnotified.ui;
 
@@ -28,16 +31,13 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CompoundButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListAdapter;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 
 import androidx.core.view.ViewCompat;
 
+import cc.ioctl.H;
+import ltd.nextalone.base.MultiItemDelayableHook;
+import me.singleneuron.qn_kernel.data.HostInformationProviderKt;
 import nil.nadph.qnotified.ExfriendManager;
 import nil.nadph.qnotified.MainHook;
 import nil.nadph.qnotified.R;
@@ -46,15 +46,15 @@ import nil.nadph.qnotified.config.ConfigManager;
 import nil.nadph.qnotified.config.SwitchConfigItem;
 import nil.nadph.qnotified.hook.BaseDelayableHook;
 import nil.nadph.qnotified.step.Step;
+import nil.nadph.qnotified.ui.widget.Switch;
 import nil.nadph.qnotified.util.NonUiThread;
+import nil.nadph.qnotified.util.Toasts;
 import nil.nadph.qnotified.util.Utils;
 
 import static android.widget.LinearLayout.LayoutParams.MATCH_PARENT;
 import static android.widget.LinearLayout.LayoutParams.WRAP_CONTENT;
 import static nil.nadph.qnotified.util.Initiator.load;
-import static nil.nadph.qnotified.util.Utils.TOAST_TYPE_ERROR;
-import static nil.nadph.qnotified.util.Utils.dip2px;
-import static nil.nadph.qnotified.util.Utils.dip2sp;
+import static nil.nadph.qnotified.util.Utils.*;
 
 public class ViewBuilder {
 
@@ -70,7 +70,6 @@ public class ViewBuilder {
         RelativeLayout root = new IsolatedStateRelativeLayout(ctx);
         root.setId((title == null ? "" : title).hashCode());
         root.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, dip2px(ctx, CONSTANT_LIST_ITEM_HEIGHT_DP)));
-        //root.setBackgroundDrawable(ResUtils.getListItemBackground());
         ViewCompat.setBackground(root,ResUtils.getListItemBackground());
         TextView tv = new TextView(ctx);
         tv.setText(title);
@@ -108,7 +107,6 @@ public class ViewBuilder {
             des.setSingleLine();
             des.setEllipsize(TextUtils.TruncateAt.END);
             RelativeLayout.LayoutParams lp_d = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            //m=(int)dip2px(ctx,6);
             lp_d.setMargins(m, 0, 0, 0);
             lp_d.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             lp_d.addRule(RelativeLayout.BELOW, R_ID_TITLE);
@@ -149,7 +147,7 @@ public class ViewBuilder {
                     ConfigManager mgr = ConfigManager.getDefaultConfig();
                     mgr.getAllConfig().put(key, isChecked);
                     mgr.save();
-                    Utils.showToastShort(buttonView.getContext(), "重启" + Utils.getHostAppName() + "生效");
+                    Utils.showToastShort(buttonView.getContext(), "重启" + HostInformationProviderKt.getHostInfo().getHostName() + "生效");
                 } catch (Throwable e) {
                     Utils.log(e);
                     Utils.showToastShort(buttonView.getContext(), e.toString());
@@ -188,7 +186,7 @@ public class ViewBuilder {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 try {
                     item.setEnabled(isChecked);
-                    Utils.showToastShort(buttonView.getContext(), "重启" + Utils.getHostAppName() + "生效");
+                    Utils.showToastShort(buttonView.getContext(), "重启" + HostInformationProviderKt.getHostInfo().getHostName() + "生效");
                 } catch (Throwable e) {
                     Utils.log(e);
                     Utils.showToastShort(buttonView.getContext(), e.toString());
@@ -401,7 +399,6 @@ public class ViewBuilder {
             value) {
         RelativeLayout root = new IsolatedStateRelativeLayout(ctx);
         root.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, dip2px(ctx, CONSTANT_LIST_ITEM_HEIGHT_DP)));
-        //root.setBackgroundDrawable(ResUtils.getListItemBackground());
         ViewCompat.setBackground(root,ResUtils.getListItemBackground());
         TextView tv = new TextView(ctx);
         tv.setText(title);
@@ -457,7 +454,6 @@ public class ViewBuilder {
             value, View.OnClickListener listener) {
         RelativeLayout root = new IsolatedStateRelativeLayout(ctx);
         root.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, dip2px(ctx, CONSTANT_LIST_ITEM_HEIGHT_DP)));
-        //root.setBackgroundDrawable(ResUtils.getListItemBackground());
         ViewCompat.setBackground(root,ResUtils.getListItemBackground());
         TextView tv = new TextView(ctx);
         tv.setText(title);
@@ -494,7 +490,6 @@ public class ViewBuilder {
             des.setSingleLine();
             des.setEllipsize(TextUtils.TruncateAt.END);
             RelativeLayout.LayoutParams lp_d = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            //m=(int)dip2px(ctx,6);
             lp_d.setMargins(m, 0, 0, 0);
             lp_d.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
             lp_d.addRule(RelativeLayout.BELOW, R_ID_TITLE);
@@ -522,6 +517,36 @@ public class ViewBuilder {
         return root;
     }
 
+    public static RelativeLayout newListItemButtonIfValid(Context ctx, CharSequence title, CharSequence desc,
+        CharSequence value, MultiItemDelayableHook hook) {
+        View.OnClickListener listener;
+        if (hook.isValid()) {
+            listener = hook.listener();
+        } else {
+            listener = (v -> Toasts.error(v.getContext(), "此功能暂不支持当前版本" + H.getAppName()));
+        }
+        return newListItemButton(ctx, title, desc, value, listener);
+    }
+
+    public static RelativeLayout newListItemButtonIfValid(Context ctx, CharSequence title, CharSequence desc,
+        CharSequence value, BaseDelayableHook hook, Class<?> activity) {
+        View.OnClickListener listener;
+        if (hook.isValid()) {
+            listener = clickToProxyActAction(activity);
+        } else {
+            listener = (v -> Toasts.error(v.getContext(), "此功能暂不支持当前版本" + H.getAppName()));
+        }
+        return newListItemButton(ctx, title, desc, value, listener);
+    }
+
+    public static RelativeLayout newListItemButtonIfValid(Context ctx, CharSequence title, CharSequence desc,
+        CharSequence value, BaseDelayableHook hook, View.OnClickListener listener) {
+        if (!hook.isValid()) {
+            listener = (v -> Toasts.error(v.getContext(), "此功能暂不支持当前版本" + H.getAppName()));
+        }
+        return newListItemButton(ctx, title, desc, value, listener);
+    }
+
     public static LinearLayout subtitle(Context ctx, CharSequence title) {
         LinearLayout ll = new LinearLayout(ctx);
         ll.setOrientation(LinearLayout.HORIZONTAL);
@@ -535,11 +560,6 @@ public class ViewBuilder {
         int m = dip2px(ctx, 14);
         tv.setPadding(m, m / 5, m / 5, m / 5);
         ll.addView(tv);
-		/*View v=new View(ctx);
-		int th=dip2px(ctx,3);
-		v.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT,th*2));
-		v.setBackground(new DivDrawable(DivDrawable.TYPE_HORIZONTAL,th));
-		ll.addView(v);*/
         return ll;
     }
 
@@ -556,21 +576,7 @@ public class ViewBuilder {
         int m = dip2px(ctx, 14);
         tv.setPadding(m, m / 5, m / 5, m / 5);
         ll.addView(tv);
-		/*View v=new View(ctx);
-		int th=dip2px(ctx,3);
-		v.setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT,th*2));
-		v.setBackground(new DivDrawable(DivDrawable.TYPE_HORIZONTAL,th));
-		ll.addView(v);*/
         return ll;
-    }
-
-    public static View.OnClickListener clickToProxyActAction(final int action) {
-        return new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                MainHook.startProxyActivity(v.getContext(), action);
-            }
-        };
     }
 
     public static View.OnClickListener clickToProxyActAction(final Class<?> clz) {
@@ -668,13 +674,7 @@ public class ViewBuilder {
     }
 
     public static CompoundButton switch_new(Context ctx) {
-        try {
-            Class<?> clazz = load("com/tencent/widget/Switch");
-            return (CompoundButton) clazz.getConstructor(Context.class).newInstance(ctx);
-        } catch (Exception e) {
-            Utils.logi("Switch->new: " + e.toString());
-        }
-        return null;
+        return new Switch(ctx);
     }
 
     public static LinearLayout newDialogClickableItemClickToCopy(final Context ctx, String title, String value, ViewGroup vg, boolean attach) {
@@ -686,7 +686,6 @@ public class ViewBuilder {
                 if (msg.length() > 0) {
                     ClipboardManager cm = (ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
                     if (cm != null) {
-                        //cm.setText(msg);
                         cm.setPrimaryClip(ClipData.newPlainText(null, msg));
                         Utils.showToastShort(c, "已复制文本");
                     }
@@ -704,7 +703,6 @@ public class ViewBuilder {
         v.setText(value);
         if (ll != null) {
             v.setOnLongClickListener(ll);
-            //v.setBackgroundDrawable(ResUtils.getDialogClickableItemBackground());
             ViewCompat.setBackground(v,ResUtils.getDialogClickableItemBackground());
         }
         if (attach) {
