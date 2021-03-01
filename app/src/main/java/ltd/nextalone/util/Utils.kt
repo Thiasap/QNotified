@@ -21,6 +21,7 @@
  */
 package ltd.nextalone.util
 
+import android.app.Activity
 import android.content.SharedPreferences
 import android.os.Looper
 import android.view.View
@@ -52,7 +53,6 @@ internal val isSimpleUi by lazy {
     try {
         val sharedPreferences = "Lcom/tencent/mobileqq/theme/ThemeUtil;->getUinThemePreferences(Lmqq/app/AppRuntime;)Landroid/content/SharedPreferences;".method.invoke(null, Utils.getAppRuntime()) as SharedPreferences
         val bool = sharedPreferences.getBoolean("key_simple_ui_switch", false)
-        logDetail("isSimpleUi:$bool")
         bool
     } catch (t: Throwable) {
         false
@@ -63,7 +63,7 @@ internal val String.clazz: Class<*>
     get() = Initiator.load(this)
 
 internal val String.method: Method
-    get() = DexMethodDescriptor(this.replace(".", "/")).getMethodInstance(Initiator.getHostClassLoader())
+    get() = DexMethodDescriptor(this.replace(".", "/").replace(" ", "")).getMethodInstance(Initiator.getHostClassLoader())
 
 internal val String.methods: Array<Method>
     get() = Initiator.load(this).declaredMethods
@@ -128,7 +128,7 @@ internal inline fun Member.hookAfter(baseHook: BaseDelayableHook, crossinline ho
     }
 })
 
-internal inline fun Member.replace(baseHook: BaseDelayableHook, crossinline hooker: (XC_MethodHook.MethodHookParam) -> Any?) = hook(object : NAMethodReplacement(baseHook) {
+internal inline fun <T : Any> Member.replace(baseHook: BaseDelayableHook, crossinline hooker: (XC_MethodHook.MethodHookParam) -> T?) = hook(object : NAMethodReplacement(baseHook) {
     override fun replaceMethod(param: MethodHookParam?) = try {
         hooker(param!!)
     } catch (e: Throwable) {
@@ -260,11 +260,11 @@ fun View.hide() {
 
 internal fun <T : View> T.hostId(name: String) = this.resources.getIdentifier(name, "id", hostInfo.packageName)
 
-internal fun <T : View?> View.findHostViewById(name: String): T? {
-    this.let {
-        return it.findViewById<T>(it.hostId(name))
-    }
-}
+internal fun <T : Activity> T.hostId(name: String) = this.resources.getIdentifier(name, "id", hostInfo.packageName)
+
+internal fun <T : View?> View.findHostViewById(name: String): T? = this.findViewById<T>(this.hostId(name))
+
+internal fun <T : View?> Activity.findHostViewById(name: String): T? = this.findViewById<T>(this.hostId(name))
 
 internal val Date.today: String
     get() = DateFormat.getDateInstance().format(this)
