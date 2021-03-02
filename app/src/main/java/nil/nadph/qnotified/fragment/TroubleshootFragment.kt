@@ -19,30 +19,23 @@
  * <https://www.gnu.org/licenses/>
  * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
-package ltd.nextalone.hook
 
-import android.widget.ImageView
-import android.widget.RelativeLayout
-import ltd.nextalone.util.clazz
-import ltd.nextalone.util.findHostView
-import ltd.nextalone.util.hookAfterAllConstructors
-import nil.nadph.qnotified.base.annotation.FunctionEntry
-import nil.nadph.qnotified.hook.CommonDelayableHook
-import nil.nadph.qnotified.util.Utils
+package nil.nadph.qnotified.fragment
 
-@FunctionEntry
-object HideChatVipImage : CommonDelayableHook("na_hide_chat_vip_image_kt") {
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import nil.nadph.qnotified.R
 
-    override fun initOnce(): Boolean {
-        return try {
-            "com.tencent.mobileqq.widget.navbar.NavBarAIO".clazz.hookAfterAllConstructors {
-                val ctx = it.thisObject as RelativeLayout
-                ctx.findHostView<ImageView>("jp0")!!.alpha = 0F
-            }
-            true
-        } catch (t: Throwable) {
-            Utils.log(t)
-            false
-        }
+class TroubleshootFragment : Fragment() {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val root = inflater.inflate(R.layout.fragment_troubleshoot, container, false)
+        return root
     }
 }
