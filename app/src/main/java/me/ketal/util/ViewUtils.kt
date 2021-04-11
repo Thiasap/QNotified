@@ -19,23 +19,36 @@
  * <https://www.gnu.org/licenses/>
  * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
-package me.singleneuron.base.decorator
 
-import de.robv.android.xposed.XC_MethodHook
-import nil.nadph.qnotified.util.Utils
+package me.ketal.util
 
-abstract class BaseItemBuilderFactoryHookDecorator(cfg: String): BaseDecorator(cfg) {
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.view.forEach
 
-    fun decorate(result:Int,chatMessage:Any,param:XC_MethodHook.MethodHookParam): Boolean {
-        if (!checkEnabled()) return false
-        return try {
-            doDecorate(result,chatMessage,param)
-        } catch (e:Exception) {
-            Utils.log(e)
-            false
-        }
+fun ViewGroup.findViewByText(text: String, contains: Boolean = false) =
+    this.findViewByCondition {
+        it.javaClass == TextView::class.java && if (!contains) (it as TextView).text == text else (it as TextView).text.contains(
+            text
+        )
     }
 
-    protected abstract fun doDecorate(result:Int,chatMessage:Any,param:XC_MethodHook.MethodHookParam): Boolean
+fun ViewGroup.findViewByType(clazz: Class<*>) =
+    this.findViewByCondition {
+        it.javaClass == clazz
+    }
 
+fun ViewGroup.findViewByCondition(condition: (view: View) -> Boolean): View? {
+    this.forEach {
+        if (condition(it))
+            return it
+        val ret = if (it is ViewGroup) {
+            it.findViewByCondition(condition)
+        } else null
+        ret?.let {
+            return ret
+        }
+    }
+    return null
 }

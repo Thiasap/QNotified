@@ -19,24 +19,24 @@
  * <https://www.gnu.org/licenses/>
  * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
-package me.singleneuron.base.decorator
+package me.singleneuron.qn_kernel.decorator
 
 import android.content.Intent
 import de.robv.android.xposed.XC_MethodHook
 import nil.nadph.qnotified.util.Utils
 
-abstract class BaseStartActivityHookDecorator(cfg: String): BaseDecorator(cfg) {
+abstract class BaseStartActivityHookDecorator(cfg: String) : BaseDecorator(cfg) {
 
-    fun decorate(intent: Intent ,param: XC_MethodHook.MethodHookParam): Boolean {
-        if (!checkEnabled()) return false
+    fun decorate(intent: Intent, param: XC_MethodHook.MethodHookParam): Boolean {
+        if (preference.getValue() != true) return false
         return try {
-            doDecorate(intent,param)
-        } catch (e:Exception) {
+            doDecorate(intent, param)
+        } catch (e: Exception) {
             Utils.log(e)
             false
         }
     }
 
-    protected abstract fun doDecorate(intent: Intent,param: XC_MethodHook.MethodHookParam): Boolean
+    protected abstract fun doDecorate(intent: Intent, param: XC_MethodHook.MethodHookParam): Boolean
 
 }

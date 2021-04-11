@@ -21,16 +21,18 @@
  */
 package ltd.nextalone.hook
 
-import ltd.nextalone.util.replaceNull
-import me.kyuubiran.util.isStatic
+import android.view.View
+import android.view.ViewGroup
+import ltd.nextalone.util.*
+import me.ketal.util.PlayQQVersion.PlayQQ_8_2_9
 import me.singleneuron.base.adapter.BaseDelayableHighPerformanceConditionalHookAdapter
 import me.singleneuron.data.PageFaultHighPerformanceFunctionCache
+import me.singleneuron.qn_kernel.data.requireMinPlayQQVersion
 import me.singleneuron.qn_kernel.data.requireMinQQVersion
 import me.singleneuron.qn_kernel.tlb.ConfigTable
 import me.singleneuron.util.QQVersion
 import nil.nadph.qnotified.base.annotation.FunctionEntry
 import nil.nadph.qnotified.util.Initiator
-import nil.nadph.qnotified.util.Utils
 import java.lang.reflect.Method
 
 @FunctionEntry
@@ -38,22 +40,29 @@ object HideProfileBubble : BaseDelayableHighPerformanceConditionalHookAdapter("h
 
     override val recordTime: Boolean = false
 
-    override fun doInit(): Boolean {
-        return try {
+    override fun doInit() = tryOrFalse {
+        if (requireMinQQVersion(QQVersion.QQ_8_6_5)) {
+            "com.tencent.mobileqq.activity.QQSettingMe".clazz?.hookAfterAllConstructors {
+                val viewGroup = it.thisObject.get("a", ViewGroup::class.java)
+                viewGroup?.findHostView<View>("mvi")?.hide()
+            }
+        } else if (requireMinQQVersion(QQVersion.QQ_8_6_0)) {
+            "com.tencent.mobileqq.activity.QQSettingMe".clazz?.hookAfterAllConstructors {
+                val viewGroup = it.thisObject.get("a", ViewGroup::class.java)
+                viewGroup?.findHostView<View>("cgf")?.hide()
+            }
+        } else {
             val clz = Initiator.load("com.tencent.mobileqq.activity.QQSettingMe")
             for (m: Method in clz.declaredMethods) {
                 val argt = m.parameterTypes
                 if (m.name == ConfigTable.getConfig(HideProfileBubble::class.simpleName) && !m.isStatic && argt.isEmpty()) {
-                    m.replaceNull(this)
+                    m.replace(this, null)
                 }
             }
-            true
-        } catch (t: Throwable) {
-            Utils.log(t)
-            false
         }
     }
 
-    override val conditionCache: PageFaultHighPerformanceFunctionCache<Boolean> = PageFaultHighPerformanceFunctionCache { requireMinQQVersion(QQVersion.QQ_8_3_6) }
+    override val conditionCache: PageFaultHighPerformanceFunctionCache<Boolean> =
+        PageFaultHighPerformanceFunctionCache { requireMinQQVersion(QQVersion.QQ_8_3_6) or requireMinPlayQQVersion(PlayQQ_8_2_9) }
 
 }

@@ -19,14 +19,25 @@
  * <https://www.gnu.org/licenses/>
  * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
-package nil.nadph.qnotified.util;
 
-public class RestartUtil {
-    public static void restartCurrentProcess() {
+package me.singleneuron.qn_kernel.ui.base
 
-    }
+import android.content.Context
 
-    public static void restartAllProcess() {
-
-    }
+interface UiPreference : UiDescription {
+    var title: String
+    var summary: String?
+    var onClickListener: (Context) -> Boolean
 }
+
+interface UiChangeablePreference<T> : UiPreference {
+    var onPreferenceChangeListener: (T) -> Boolean
+    var getValue: () -> T?
+}
+
+interface UiSwitchPreference : UiChangeablePreference<Boolean> {
+    var valid: Boolean
+}
+
+interface UiEditTextPreference : UiChangeablePreference<String>
+

@@ -22,20 +22,30 @@
 package me.singleneuron.hook.decorator
 
 import de.robv.android.xposed.XC_MethodHook
-import me.singleneuron.base.decorator.BaseItemBuilderFactoryHookDecorator
-import nil.nadph.qnotified.base.annotation.FunctionEntry
+import me.singleneuron.qn_kernel.annotation.UiItem
+import me.singleneuron.qn_kernel.decorator.BaseItemBuilderFactoryHookDecorator
+import me.singleneuron.qn_kernel.ui.base.UiSwitchPreference
 import nil.nadph.qnotified.util.ReflexUtil.iget_object_or_null
 import nil.nadph.qnotified.util.ReflexUtil.invoke_virtual
 
-@FunctionEntry
-object SimpleCheckIn: BaseItemBuilderFactoryHookDecorator("qn_sign_in_as_text") {
+@UiItem
+object SimpleCheckIn : BaseItemBuilderFactoryHookDecorator("qn_sign_in_as_text") {
 
-    override fun doDecorate(result:Int,chatMessage:Any,param: XC_MethodHook.MethodHookParam): Boolean {
+    override fun doDecorate(
+        result: Int,
+        chatMessage: Any,
+        param: XC_MethodHook.MethodHookParam
+    ): Boolean {
         if (result == 71 || result == 84) {
             param.result = -1
             return true
         } else if (result == 47) {
-            val json = invoke_virtual(iget_object_or_null(param.args[param.args.size - 1], "ark_app_message"), "toAppXml", *arrayOfNulls(0)) as String
+            val json = invoke_virtual(
+                iget_object_or_null(
+                    param.args[param.args.size - 1],
+                    "ark_app_message"
+                ), "toAppXml", *arrayOfNulls(0)
+            ) as String
             if (json.contains("com.tencent.qq.checkin")) {
                 param.result = -1
                 return true
@@ -43,5 +53,11 @@ object SimpleCheckIn: BaseItemBuilderFactoryHookDecorator("qn_sign_in_as_text") 
         }
         return false
     }
+
+    override val preference: UiSwitchPreference = uiSwitchPreference {
+        title = "签到文本化"
+    }
+
+    override val preferenceLocate: Array<String> = arrayOf("净化功能")
 
 }

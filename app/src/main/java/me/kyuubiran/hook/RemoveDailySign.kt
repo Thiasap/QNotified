@@ -28,6 +28,8 @@ import de.robv.android.xposed.XposedBridge
 import me.kyuubiran.util.getObjectOrNull
 import me.kyuubiran.util.loadClass
 import me.kyuubiran.util.setViewZeroSize
+import me.singleneuron.qn_kernel.data.hostInfo
+import me.singleneuron.util.QQVersion
 import nil.nadph.qnotified.base.annotation.FunctionEntry
 import nil.nadph.qnotified.hook.CommonDelayableHook
 import nil.nadph.qnotified.util.LicenseStatus
@@ -39,14 +41,26 @@ object RemoveDailySign : CommonDelayableHook("kr_remove_daily_sign") {
 
     override fun initOnce(): Boolean {
         return try {
-            XposedBridge.hookAllConstructors(loadClass("com.tencent.mobileqq.activity.QQSettingMe"), object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam?) {
-                    if (LicenseStatus.sDisableCommonHooks) return
-                    if (!isEnabled) return
-                    val dailySignLayout = getObjectOrNull(param?.thisObject, "a", LinearLayout::class.java) as LinearLayout
-                    dailySignLayout.setViewZeroSize()
-                }
-            })
+            XposedBridge.hookAllConstructors(
+                loadClass("com.tencent.mobileqq.activity.QQSettingMe"),
+                object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        if (LicenseStatus.sDisableCommonHooks) return
+                        if (!isEnabled) return
+                        try {
+                            val dailySignName = if (hostInfo.packageName == Utils.PACKAGE_NAME_QQ
+                                && hostInfo.versionCode == QQVersion.QQ_8_6_0) "b" else "a"
+                            val dailySignLayout = getObjectOrNull(
+                                param.thisObject,
+                                dailySignName,
+                                LinearLayout::class.java
+                            ) as LinearLayout
+                            dailySignLayout.setViewZeroSize()
+                        } catch (t: Throwable) {
+                            Utils.log(t)
+                        }
+                    }
+                })
             true
         } catch (t: Throwable) {
             Utils.log(t)

@@ -24,10 +24,8 @@ package me.kyuubiran.util
 import android.os.Handler
 import android.os.Looper
 import cc.ioctl.script.QNClient
-import com.topjohnwu.superuser.internal.UiThreadHandler.handler
 import me.singleneuron.qn_kernel.data.hostInfo
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.concurrent.thread
 
 
@@ -52,7 +50,7 @@ object AutoRenewFireMgr {
                     hostInfo.application.showToastBySystem("好耶 续火完毕了")
                 }
             }
-            handler.postDelayed(this, 600000L)
+            mHandler.postDelayed(this, 600000L)
         }
     }
 

@@ -21,37 +21,34 @@
  */
 package cc.ioctl.hook;
 
+import static nil.nadph.qnotified.util.Utils.log;
+
 import android.util.JsonReader;
 import android.util.Log;
-
+import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.XposedHelpers;
+import me.singleneuron.qn_kernel.data.HostInformationProviderKt;
 import me.singleneuron.qn_kernel.tlb.ConfigTable;
+import me.singleneuron.util.QQVersion;
 import nil.nadph.qnotified.base.annotation.FunctionEntry;
 import nil.nadph.qnotified.hook.CommonDelayableHook;
 import nil.nadph.qnotified.util.Initiator;
 import nil.nadph.qnotified.util.Utils;
 
-import static nil.nadph.qnotified.util.Utils.log;
-
 /**
- * Not an important hook.
- * Provide limited anti-crash feature for VasProfileCard, esp DIY card.
+ * Not an important hook. Provide limited anti-crash feature for VasProfileCard, esp DIY card.
  */
 @FunctionEntry
 public class VasProfileAntiCrash extends CommonDelayableHook {
 
-    private static final VasProfileAntiCrash self = new VasProfileAntiCrash();
+    public static final VasProfileAntiCrash INSTANCE = new VasProfileAntiCrash();
 
     private VasProfileAntiCrash() {
         super("__NOT_USED__");
-    }
-
-    public static VasProfileAntiCrash get() {
-        return self;
     }
 
     @Override
@@ -59,7 +56,8 @@ public class VasProfileAntiCrash extends CommonDelayableHook {
         try {
             String className = null;
             try {
-                className = ConfigTable.INSTANCE.getConfig(VasProfileAntiCrash.class.getSimpleName());
+                className = ConfigTable.INSTANCE
+                    .getConfig(VasProfileAntiCrash.class.getSimpleName());
             } catch (Exception e) {
                 Utils.log(e);
             }
@@ -77,40 +75,54 @@ public class VasProfileAntiCrash extends CommonDelayableHook {
             XposedBridge.hookAllMethods(JsonReader.class, "nextLong", new XC_MethodHook() {
                 @Override
                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                    if (!param.hasThrowable()) return;
-                    if (!Log.getStackTraceString(param.getThrowable()).contains("FriendProfileCardActivity")) return;
+                    if (!param.hasThrowable()) {
+                        return;
+                    }
+                    if (!Log.getStackTraceString(param.getThrowable())
+                        .contains("FriendProfileCardActivity")) {
+                        return;
+                    }
                     param.setResult(0L);
                 }
             });
         } catch (Exception e) {
             //ignore
         }
-        if (className == null) return;
+        if (className == null) {
+            return;
+        }
+        XC_MethodHook hook = new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                if (param.hasThrowable()) {
+                    param.setResult(0L);
+                }
+            }
+        };
         Class<?> Card = Initiator.load("com.tencent.mobileqq.data.Card");
+        if (HostInformationProviderKt.requireMinQQVersion(QQVersion.QQ_8_6_0)) {
+            XposedHelpers.findAndHookMethod(
+                Initiator.load(className),
+                "getDiyTemplateVersion", Card, hook);
+            return;
+        }
         for (Method m : Initiator.load(className).getDeclaredMethods()) {
             Class<?>[] argt;
             if (Modifier.isStatic(m.getModifiers()) && m.getName().equals("a")
-                    && m.getReturnType() == long.class && (argt = m.getParameterTypes()).length == 1
-                    && argt[0] == Card) {
-                XposedBridge.hookMethod(m, new XC_MethodHook() {
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                        if (param.hasThrowable()) {
-                            param.setResult(0L);
-                        }
-                    }
-                });
+                && m.getReturnType() == long.class && (argt = m.getParameterTypes()).length == 1
+                && argt[0] == Card) {
+                XposedBridge.hookMethod(m, hook);
             }
         }
     }
 
     @Override
-    public void setEnabled(boolean enabled) {
-        //do nothing
+    public boolean isEnabled() {
+        return true;
     }
 
     @Override
-    public boolean isEnabled() {
-        return true;
+    public void setEnabled(boolean enabled) {
+        //do nothing
     }
 }

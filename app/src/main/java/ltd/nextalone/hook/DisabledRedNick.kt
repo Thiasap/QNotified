@@ -19,7 +19,7 @@
  * <https://www.gnu.org/licenses/>
  * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
-package me.nextalone.hook
+package ltd.nextalone.hook
 
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
@@ -28,25 +28,23 @@ import me.singleneuron.qn_kernel.data.requireMinQQVersion
 import me.singleneuron.util.QQVersion
 import nil.nadph.qnotified.base.annotation.FunctionEntry
 import nil.nadph.qnotified.hook.CommonDelayableHook
-import nil.nadph.qnotified.util.Utils
+import nil.nadph.qnotified.step.DexDeobfStep
+import nil.nadph.qnotified.util.DexKit
 
 @FunctionEntry
-object DisabledRedNick : CommonDelayableHook("na_disable_red_nick_kt") {
+object DisabledRedNick : CommonDelayableHook("na_disable_red_nick_kt", DexDeobfStep(DexKit.N_FriendChatPie_updateUITitle)) {
 
-    override fun initOnce(): Boolean {
-        return try {
-            if (!isSimpleUi) {
-                "Lcom/tencent/mobileqq/activity/aio/core/FriendChatPie;->aP()V".method.hookBefore(this) {
-                    val navAIO = it.thisObject.get("a", "com.tencent.mobileqq.widget.navbar.NavBarAIO".clazz) as RelativeLayout
-                    val linearLayout = navAIO.findHostView<LinearLayout>("e89")
-                    linearLayout?.hide()
-                    it.result = null
-                }
+    override fun initOnce() = tryOrFalse {
+        if (!isSimpleUi) {
+            DexKit.doFindMethod(DexKit.N_FriendChatPie_updateUITitle)?.hookBefore(this) {
+                val navAIO = it.thisObject.get(
+                    "a",
+                    "com.tencent.mobileqq.widget.navbar.NavBarAIO".clazz
+                ) as RelativeLayout
+                val linearLayout = navAIO.findHostView<LinearLayout>("e89")
+                linearLayout?.hide()
+                it.result = null
             }
-            true
-        } catch (t: Throwable) {
-            Utils.log(t)
-            false
         }
     }
 

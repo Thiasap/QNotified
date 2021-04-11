@@ -19,15 +19,12 @@
  * <https://www.gnu.org/licenses/>
  * <https://github.com/ferredoxin/QNotified/blob/master/LICENSE.md>.
  */
-package me.singleneuron.base.decorator
+package me.ketal.util;
 
-import me.singleneuron.base.adapter.BaseDelayableHookAdapter
+public class PlayQQVersion {
 
-abstract class BaseDecorator(cfg: String): BaseDelayableHookAdapter(cfg)  {
-    override fun init(): Boolean {
-        return true
-    }
-    override fun doInit(): Boolean {
-        return true
-    }
+    public static final long PlayQQ_8_2_9 = 1352;
+    public static final long PlayQQ_8_2_9_1 = 1353;
+    public static final long PlayQQ_8_2_10 = 1354;
+    public static final long PlayQQ_8_2_11 = 1380;
 }

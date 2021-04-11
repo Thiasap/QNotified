@@ -30,13 +30,17 @@ import cn.lliiooll.msg.MessageReceiver
 import de.robv.android.xposed.XposedHelpers
 import me.kyuubiran.util.getExFriendCfg
 import me.singleneuron.qn_kernel.data.MsgRecordData
+import me.singleneuron.qn_kernel.ui.base.UiDescription
+import me.singleneuron.qn_kernel.ui.base.UiItem
+import me.singleneuron.qn_kernel.ui.base.uiEditTextPreference
 import nil.nadph.qnotified.ui.CustomDialog
 import nil.nadph.qnotified.ui.ViewBuilder
 import nil.nadph.qnotified.util.Initiator
 import nil.nadph.qnotified.util.ReflexUtil
 import nil.nadph.qnotified.util.Utils
 
-object RegexAntiMeg : MessageReceiver, View.OnClickListener {
+@me.singleneuron.qn_kernel.annotation.UiItem
+object RegexAntiMeg : MessageReceiver, View.OnClickListener, UiItem {
 
     private var regexCache: Regex? = null
     private var regexStringCache: String = ""
@@ -44,15 +48,28 @@ object RegexAntiMeg : MessageReceiver, View.OnClickListener {
     override fun onReceive(data: MsgRecordData?): Boolean {
         try {
             if (data == null) return false
-            val regexString = getExFriendCfg().getStringOrDefault(RegexAntiMeg::class.simpleName, "")
+            val regexString =
+                getExFriendCfg().getStringOrDefault(RegexAntiMeg::class.simpleName, "")
             if (regexString.isNullOrBlank()) return false
             return when {
-                Initiator.load("com.tencent.mobileqq.data.MessageForStructing").isAssignableFrom(data.javaClass) -> {
-                    val text = ReflexUtil.invoke_virtual(ReflexUtil.iget_object_or_null(data, "structingMsg"), "getXml", *arrayOfNulls(0)) as String
+                Initiator.load("com.tencent.mobileqq.data.MessageForStructing")
+                    .isAssignableFrom(data.javaClass) -> {
+                    val text = ReflexUtil.invoke_virtual(
+                        ReflexUtil.iget_object_or_null(
+                            data,
+                            "structingMsg"
+                        ), "getXml", *arrayOfNulls(0)
+                    ) as String
                     processMsg(data, text, regexString)
                 }
-                Initiator.load("com.tencent.mobileqq.data.MessageForArkApp").isAssignableFrom(data.javaClass) -> {
-                    val text = ReflexUtil.invoke_virtual(ReflexUtil.iget_object_or_null(data, "ark_app_message"), "toAppXml", *arrayOfNulls(0)) as String
+                Initiator.load("com.tencent.mobileqq.data.MessageForArkApp")
+                    .isAssignableFrom(data.javaClass) -> {
+                    val text = ReflexUtil.invoke_virtual(
+                        ReflexUtil.iget_object_or_null(
+                            data,
+                            "ark_app_message"
+                        ), "toAppXml", *arrayOfNulls(0)
+                    ) as String
                     processMsg(data, text, regexString)
                 }
                 else -> false
@@ -80,17 +97,39 @@ object RegexAntiMeg : MessageReceiver, View.OnClickListener {
         val _5 = Utils.dip2px(context, 5f)
         val editText = EditText(context)
         editText.setPadding(_5, _5, _5, _5 * 2)
-        val params = ViewBuilder.newLinearLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, _5 * 2)
+        val params = ViewBuilder.newLinearLayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            _5 * 2
+        )
         val linearLayout = LinearLayout(context)
         linearLayout.orientation = LinearLayout.VERTICAL
         linearLayout.addView(editText, params)
         dialog.setTitle("设置万象屏蔽卡片消息正则表达式（留空禁用）")
             .setView(linearLayout)
             .setPositiveButton("确定") { _, _ ->
-                getExFriendCfg().putString(RegexAntiMeg::class.java.simpleName, editText.text.toString())
+                getExFriendCfg().putString(
+                    RegexAntiMeg::class.java.simpleName,
+                    editText.text.toString()
+                )
             }
             .setNegativeButton("取消", null)
             .create()
             .show()
     }
+
+    override val preference: UiDescription = uiEditTextPreference {
+        title = "万象屏蔽卡片消息"
+        summary = "使用强大的正则表达式自由屏蔽卡片消息"
+        onPreferenceChangeListener = {
+            getExFriendCfg().putString(RegexAntiMeg::class.java.simpleName, it)
+            true
+        }
+        inputLayoutSetter = {
+            helperText = "留空以禁用"
+        }
+    }
+
+    override val preferenceLocate: Array<String> = arrayOf("辅助功能")
+
 }

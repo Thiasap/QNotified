@@ -23,9 +23,12 @@ package me.singleneuron.hook.decorator
 
 import android.content.Intent
 import de.robv.android.xposed.XC_MethodHook
-import me.singleneuron.base.decorator.BaseStartActivityHookDecorator
+import me.singleneuron.qn_kernel.annotation.UiItem
+import me.singleneuron.qn_kernel.decorator.BaseStartActivityHookDecorator
+import me.singleneuron.qn_kernel.ui.base.UiSwitchPreference
 
-object DisableQzoneSlideCamera: BaseStartActivityHookDecorator("disableCameraOnSweepingInQzone") {
+@UiItem
+object DisableQzoneSlideCamera : BaseStartActivityHookDecorator("disableCameraOnSweepingInQzone") {
 
     override fun doDecorate(intent: Intent, param: XC_MethodHook.MethodHookParam): Boolean {
         if (intent.data?.toString()?.contains("qzoneSlideCamera") == true) {
@@ -34,5 +37,11 @@ object DisableQzoneSlideCamera: BaseStartActivityHookDecorator("disableCameraOnS
         }
         return false
     }
+
+    override val preference: UiSwitchPreference = uiSwitchPreference {
+        title = "屏蔽空间滑动相机"
+    }
+
+    override val preferenceLocate: Array<String> = arrayOf("辅助功能")
 
 }
